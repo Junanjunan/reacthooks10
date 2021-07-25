@@ -1,0 +1,225 @@
+# 0.3 Requirements
+
+    react, node.js
+
+    npm이 있어야 publish 할 수 있다.
+
+    setState, setStateComponent, componentDidMount 등을 알아야 한다.
+
+
+# 0.5 Workflow
+
+    codesandbox에서 할것임
+
+    codesandbox에서 react 앱을 만들고 Ctrl+S로 저장하면 sandbox가 fork 되어서 다른 url로 바뀐다는데 난 변화가 없음
+
+
+# 1.0 Introduction to useState
+    useState는 항상 2개의 value를 return 한다.
+        첫번째는 내가 지정하는 값(item), 두번째는 첫번째 값을 변경하게 한다.(setItem)
+
+            import {useState} from "react";
+            const [item, setItem] = useState(initialState);
+            ->  const [item, setItem] = useState(1);
+            (강의에서 좀 불확실하게 언급) useState는 array를 return 해야 하는 것 같다
+
+            만약 item하나만 사용하고 싶다면
+                const item = useState(1)[0]; 이렇게 사용 하라 함
+            또는 function을수정하고 싶으면
+                const item = useState(1)[1]; 라고 하는데 무슨 의미인지...
+
+    (index.js)
+        import { StrictMode } from "react";
+        import ReactDOM from "react-dom";
+
+        import App from "./App";
+
+        const rootElement = document.getElementById("root");
+        ReactDOM.render(
+        <StrictMode>
+            <App />
+        </StrictMode>,
+        rootElement
+        );
+
+    (App.js)
+        import "./styles.css";
+        import { useState } from "react";
+
+        export default function App() {
+        const [item, setItem] = useState(1);
+        const incrementItem = () => setItem(item + 1);
+        const decrementItem = () => setItem(item - 1);
+        return (
+            <div className="App">
+            <h1>Hello {item}</h1>
+            <h2>Start editing to see some magic happen~!</h2>
+            <button onClick={incrementItem}>increment</button>
+            <button onClick={decrementItem}>decrement</button>
+            </div>
+        );
+        }
+
+    이렇게 하면 button을 클릭했을 때 값이 변하는 것을 만든다.
+    이제 이것을 class component로 바꿔보자.
+    hooks가 생기기 전에는 state를 함수형 component에 사용할 수 없었다. (class component보다 hooks가 편하다는 것을 보여주려고 하는 듯)
+    state를 사용하기 위해서는 class component 형식을 사용했어야 한다.
+    class component는 this와 같은 문장규칙과 render와 같은 사용방법을 알았어야 하는데 hooks는 이게 필요 없다.
+    return에다가 뿌려주고 그 위에 정의(const 등)만 해주면 됨
+
+    (App.js)
+        import "./styles.css";
+        import React, { useState } from "react";
+
+        export default function App() {
+        const [item, setItem] = useState(1);
+        const incrementItem = () => setItem(item + 1);
+        const decrementItem = () => setItem(item - 1);
+        return (
+            <div className="App">
+            <h1>Hello {item}</h1>
+            <h2>Start editing to see some magic happen~!</h2>
+            <button onClick={incrementItem}>increment</button>
+            <button onClick={decrementItem}>decrement</button>
+            </div>
+        );
+        }                                                              // 여기까지는 useState 사용
+
+        export class AppUgly extends React.Component {                 // 여기서부터는 class component 사용
+        state = {
+            item: 1
+        };
+        render() {
+            const { item } = this.state;
+            return (
+            <div className="App">
+                <h1>Hello {item}</h1>
+                <h2>Start editing to see some magic happen~!</h2>
+                <button onClick={this.incrementItem}>increment</button>
+                <button onClick={this.decrementItem}>decrement</button>
+            </div>
+            );
+        }
+        incrementItem = () => {
+            this.setState((state) => {
+            return {
+                item: state.item + 1
+            };
+            });
+        };
+        decrementItem = () => {
+            this.setState((state) => {
+            return {
+                item: state.item - 1
+            };
+            });
+        };
+        }
+
+    (index.js)
+        import { StrictMode } from "react";
+        import ReactDOM from "react-dom";
+
+        import App, { AppUgly } from "./App";       // App은 함수형, AppUgly는 class component 이 두 차이 때문에 호출할 떄 {} 안붙고 붙고의 차이가 있는 듯
+
+        const rootElement = document.getElementById("root");
+        ReactDOM.render(
+        <StrictMode>
+            <App />
+            <AppUgly />
+        </StrictMode>,
+        rootElement
+        );
+
+
+# 1.1 useInput
+
+    (App.js)
+        import React, { useState } from "react";
+
+        const useInput = (initialValue) => {
+        const [value, setValue] = useState(initialValue);
+        return { value };                   // 기본 value를 return 해줘보도록 하자
+        };
+
+        export default function App() {
+        const name = useInput("MR.");
+        return (
+            <div className="App">
+            <h1>Hello</h1>
+            <input placeholder="Name" value="name.value" />     // value="name.value"를 ...name으로 교체할 수 있는데, ...name은 name을 풀어서 안에 있는 것을 모두 표현하라는 의미
+            </div>
+        );
+        }
+
+    (App.js)
+        export default function App() {
+        const name = useInput("MR.");
+        return (
+            <div className="App">
+            <h1>Hello</h1>
+            <input placeholder="Name" {...name} />      // 이런 식으로
+            </div>
+        );
+        }
+
+    (App.js)
+        const useInput = (initialValue) => {
+        const [value, setValue] = useState(initialValue);
+        const onChange = (event) => {
+            console.log(event.target);
+        };
+        return { value, onChange };
+        };
+
+        export default function App() {
+        const name = useInput("MR.");
+        return (
+            <div className="App">
+            <h1>Hello</h1>
+            <input placeholder="Name" {...name} />
+            </div>
+        );
+        }
+
+    위와같이 해주고 input에 타이핑을 하면, 타이핑마다 console.log 출력 됨
+    이건 react에 있어 혁명적이다. 다른 function에서 이벤트를 처리할 수 있기 때문이다.
+    이벤트를 분리된 파일, 다른 entity에 연결해서 처리할 수 있다.
+
+
+# 1.2 useInput part Two
+    (App.js)
+        import "./styles.css";
+        import React, { useState } from "react";
+
+        const useInput = (initialValue, validator) => {         // 1. validator 추가 / 6. useIntput("Mr.", maxLen)
+        const [value, setValue] = useState(initialValue);
+        const onChange = (event) => {
+            const {
+            target: { value }
+            } = event;
+            let willUpdate = true;
+            if (typeof validator === "function") {              // 2. validator가 function일때 value 값을 검증해서 willUpdate에 return  // 7. maxLen이 글자수가 10이하냐 초과냐에 따라 true, false 값을 반환하는 함수이기 때문에 if문 구동
+            willUpdate = validator(value);
+            }
+            if (willUpdate) {                                   // 3. 2에서 받은  willUpdate 값이 true이면 value값을 받아서 setValue를 실행 (기본으로 let willUpdate = true이기 때문에 우선은 실행) // 글자수가 10이하인 경우 true 값이 willUpdate에 반영. 즉, 글자수가 10이하인 경우만 setValue를 통해 value값이 새로 배정 -> 글자값이 10이 넘어가면서부터 setValue가 작동하지 않아서 글자수는 10을 넘어가지 않는다.
+            setValue(value);
+            }
+        };
+        return { value, onChange };
+        };
+
+        export default function App() {
+        const maxLen = (value) => value.length <= 10;           // 4. 글자수가 10 미만일때
+        const name = useInput("MR.", maxLen);                   // 5. 초기값 "MR.", maxLen을 받은 useInput 값을 name에 return -> 6으로 간다.(1번)
+        return (
+            <div className="App">
+            <h1>Hello</h1>
+            <input placeholder="Name" {...name} />
+            </div>
+        );
+        }
+
+        // 또 다른 예로 const maxLen = (value) => !value.includes("@"); 라고하면, @가 입력이 되지 않는다.
+
+            
