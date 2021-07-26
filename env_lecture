@@ -223,3 +223,212 @@
         // 또 다른 예로 const maxLen = (value) => !value.includes("@"); 라고하면, @가 입력이 되지 않는다.
 
             
+# 1.3 useTabs
+
+    (App.js)
+        import "./styles.css";
+        import React, { useState } from "react";
+
+        const content = [
+        {
+            tab: "Section 1",
+            content: "content Section 1"
+        },
+        {
+            tab: "Section2",
+            content: "content Section 2"
+        }
+        ];
+
+        const useTabs = (initialTab, allTabs) => {
+        if (!allTabs || !Array.isArray(allTabs)) {                      // Array.isArray() -> 종류가 어레이인지 아닌지 확인하는 함수
+            return;
+        }
+        const [currentIndex, setCurrentIndex] = useState(initialTab);
+        return {
+            currentItem: allTabs[currentIndex],
+            changeItem: setCurrentIndex
+        };
+        };
+
+        export default function App() {
+        const { currentItem, changeItem } = useTabs(0, content);        // 이 표현식이 익숙하지 않음...
+        return (
+            <div className="App">
+            {content.map((section, index) => (
+                <button onClick={() => changeItem(index)}>{section.tab}</button>
+            ))}
+            <div>{currentItem.content}</div>
+            </div>
+        );
+        }
+
+
+# 2.0 Introduction to useEffect
+    
+    useEffect는 componentWillUnmount, componentDidMount, componentWillUpdate 이다!! (세개를 합쳐 놓은 것?)
+
+    useEffect
+    useEffect(effect, deps?)    (? 안붙는 거는 필수적인것, ? 붙는거는 선택적인것인 듯)
+    (alias) useEffect(effect: React.EffectCallback, deps?: React.DependencyList): void
+    import useEffect
+    Accepts a function that contains imperative, possibly effectful code.
+
+    @param effect — Imperative function that can return a cleanup function
+
+    @param deps — If present, effect will only activate if the values in the list change.
+
+    @version — 16.8.0
+
+    @see — https ://reactjs.org/docs/hooks-reference.html#useeffect
+
+    (App.js)
+        import "./styles.css";
+        import React, { useEffect, useState } from "react";
+
+        export default function App() {
+        const sayHello = () => console.log("Hello");
+        const [number, setNumber] = useState(0);
+        const [aNumber, setAnumber] = useState(0);
+        // useEffect(() => {
+        //   sayHello();
+        // });
+        useEffect(sayHello, [number]); // 이렇게 하면 number가 변할때만(첫 버튼 클리시만) "Hello"가 출력, [number, aNumber]를 넣으면 각 버튼 모두 Hello 출력
+                                       // effect 자리는 componentDidMount, deps 자리는 componentWillUpdate (라고 함..) -> component가 Mount 되었을 때 실행시키고 그 이후에 어떤 경우에도 실행시키고 싶지 않다면 빈 dependency를 전달하면 된다. [], 이때는 componentWillUpdate를 갖지 않게 되는 것이다.(?)
+        return (
+            <div className="App">
+            <div>Hi</div>
+            <button onClick={() => setNumber(number + 1)}>{number}</button>
+            <button onClick={() => setAnumber(aNumber + 1)}>{aNumber}</button>
+            </div>
+        );
+        }
+
+
+# 2.1 useTitle
+
+    (App.js)
+        import "./styles.css";
+        import React, { useEffect, useState } from "react";
+
+        const useTitle = (initialTitle) => {
+        const [title, setTitle] = useState(initialTitle);
+        const updateTitle = () => {
+            const htmlTitle = document.querySelector("title");
+            htmlTitle.innerText = title;
+        };
+        useEffect(updateTitle, [title]);
+        return setTitle;
+        };
+
+        export default function App() {
+        const titleUpdater = useTitle("Loading...");
+        setTimeout(() => titleUpdater("Home"), 3000);       // title을 보면 "Loading"이 3초 동안 나오고 그 후에 "Home"으로 바뀐다.
+        return (
+            <div className="App">
+            <div>Hi</div>
+            </div>
+        );
+        }
+
+
+#. 2.2 useClick
+
+    useRef에 대해서 먼저 설명
+    useRef 는 getElementById와 유사, 찾으려는 곳에 ref를 걸고, 원하는 것 실행해준다
+    (App.js)
+        import "./styles.css";
+        import React, { useEffect, useState, useRef } from "react";
+
+        export default function App() {
+        const potato = useRef();            / reference는 기본적으로 component의 어떤 부분을 선택할 수 있는 방법
+        setTimeout(() => console.log(potato), 3000);
+        return (
+            <div className="App">
+            <div>Hi</div>
+            <input ref={potato} placeholder="la" />
+            </div>
+        );
+        }
+
+    위와 같이 하면, 3초 뒤에 아래와 같이 출력
+        {current: HTMLInputElement}
+        current: <input placeholder="la"></input>
+
+    console.log(potato.current); 라고 하면
+    <input placeholder="la"></input> 만 출력
+    즉, current까지 입력을 해서, 원하는 지점을 딱 집어서 필요한 것 실행 가능
+
+    (App.js)
+        import "./styles.css";
+        import React, { useEffect, useState, useRef } from "react";
+
+        export default function App() {
+        const potato = useRef(); // reference는 기본적으로 component의 어떤 부분을 선택할 수 있는 방법
+        setTimeout(() => potato.current?.focus(), 5000);        
+        return (
+            <div className="App">
+            <div>Hi</div>
+            <input ref={potato} placeholder="la" />
+            </div>
+        );
+        }
+
+    강의에서는 potato.current.focus() 라고 했는데, 오류가 발생 mount되기 전에 실행되는 문제라고 함
+        [Cannot read property 'focus' of undefined 오류 해결 방법 2가지]
+        첫 번째 방법: potato.current.focus()를 -> potato.current?.focus()로 변경해주기
+
+        두 번째 방법: useEffect를 이용해서 마운트가 끝난 후 focus해주기
+        useEffect(() => {
+        setTimeout(() => {
+        potato.current.focus();
+        }, 5000);
+        });
+                    
+
+    (App.js)
+        import "./styles.css";
+        import React, { useEffect, useState, useRef } from "react";
+
+        const useClick = (onClick) => {
+        if (typeof onClick !== "function") {
+            return;
+        }
+        const element = useRef();
+        useEffect(() => {
+            if (element.current) {
+            element.current.addEventListener("click", onClick);
+            }
+            return () => {
+            if (element.current) {
+                element.current.removeEventListener("click", onClick);
+            }
+            };
+        }, []); // dependency 없이. 따라서 무언가 update되었을때를 고려 안해도 된다.
+        return element;
+        };
+
+        export default function App() {
+        const sayHello = () => console.log("say hello");
+        const title = useClick(sayHello);
+        return (
+            <div className="App">
+            <h1 ref={title}>Hi</h1>
+            </div>
+        );
+        }
+
+        // useEffect에서 한가지 알아야 할 것, componentWillUnmount 될 때, addEventListener 지워야 한다.
+        // useEffect는 componentDidmount 상태에 동작한다.
+        // useEffect는 componentWillUnmount 때 발생하게 되는데, 이후에 여기서는 return() ={if(element.current){element.current.removeEventListener("click", onClick);}} 부분이 발동
+        // 그래서 dependency가 존재하지 않는한 useEffect 안에 function을 넣으면 componentDidMount, componentDidUpdate 때 호출될것이다.
+        // 만약 dependency가 존재한다면 addEventListener가 있는 function은 componentDidMount 일 때만 호출 될 것이다.
+        // componentWillUnmount일 때는 return 한다.
+        // 만약 function을 return 한다면 useEffect를 return 받은 그 함수는 componentWillUnMount때 호출될 것이다.
+        // dependency를 넣지 않고 없애버린다면(빈 array 도 아예 안쓴다면) 매번 update 될 때마다 eventListener가 추가된다. 우린 이걸 원하지 않기 떄문에 [] 반드시 넣어준다.
+        // 그래야 이건 componentDidMount 때 단 한번만 실행되라는 의미가 된다.
+        // return에 removeEventListener 넣어준 것은 Component가 mount 되지 않았을 떄 eventListener가 배치되게 하고 싶지 않아서이다.
+
+
+# 2.3 useConfirm & usePreventLeave
+    
